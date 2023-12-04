@@ -3,25 +3,33 @@
 use sha3::{Digest, Sha3_256};
 use std::sync::{Arc, Mutex};
 use std::thread;
+use rand::Rng;
+
 
 fn main() {
     let current_challenge = "rETH";
     let solution: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
 
-    let threads = 14; // 设置线程数量
+    let threads = 8; // 设置线程数量
     let handles: Vec<_> = (0..threads).map(|_| {
         let solution = Arc::clone(&solution);
         thread::spawn(move || {
             loop {
-                let random_value = random_bytes(32);
+                let mut rng = rand::thread_rng();
+                let random_value: [u8; 32] = rng.gen();
+                // let mut random_value = random_bytes(32);
+                // println!("random_value: {:?}", random_value);
                 let potential_solution = hexlify(&random_value);
-                let hashed_solution = keccak256(&[potential_solution.as_bytes(), current_challenge.as_bytes()]);
+                // const potential_solution = ethers.utils.hexlify(random_value);
 
+                let hashed_solution = "0x".to_owned() + &keccak256(&[potential_solution.as_bytes(), current_challenge.as_bytes()]);
+                // println!("hashed_solution_to_try: {}",hashed_solution);
                 if hashed_solution.starts_with("0x7777777") {
+                    // 0x7777777
                     let mut solution = solution.lock().unwrap();
                     *solution = Some(potential_solution);
-                    println!("hashed_solution: {}", hashed_solution);
-                    println!("solution: {}", solution.as_ref().unwrap());
+                    println!("hashed_solution OK!: {}", hashed_solution);
+                    println!("solution: {}", "0x".to_owned() + solution.as_ref().unwrap());
                     break;
                 }
             }
